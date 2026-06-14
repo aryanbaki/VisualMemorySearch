@@ -1,6 +1,6 @@
 streamlit
+openai
 pillow
+pandas
 numpy
-pydantic
-python-dotenv
-pytest
+scikit-learn

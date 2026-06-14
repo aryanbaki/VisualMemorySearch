@@ -1,9 +1,0 @@
-# Copy this file to settings.toml for local configuration.
-
-[app]
-name = "Visual Memory Search"
-
-[storage]
-raw_dir = "data/raw"
-processed_dir = "data/processed"
-index_dir = "data/indexes"

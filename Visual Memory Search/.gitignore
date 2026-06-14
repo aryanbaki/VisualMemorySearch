@@ -1,17 +1,13 @@
 .DS_Store
 __pycache__/
 *.py[cod]
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
 
 .env
 .venv/
 venv/
 
-data/raw/*
-data/processed/*
-data/indexes/*
-!data/raw/.gitkeep
-!data/processed/.gitkeep
-!data/indexes/.gitkeep
+.streamlit/secrets.toml
+
+data/index.json
+data/screenshots/*
+!data/screenshots/.gitkeep
