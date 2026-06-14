@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from openai import APIError, OpenAIError, RateLimitError
 import pandas as pd
 import streamlit as st
 
@@ -20,6 +21,31 @@ if not api_key or api_key == "your_api_key_here":
     st.stop()
 
 records = load_index()
+
+
+def show_openai_error(error: OpenAIError) -> None:
+    if isinstance(error, RateLimitError):
+        error_payload = getattr(error, "body", {}) or {}
+        error_code = error_payload.get("code") if isinstance(error_payload, dict) else None
+
+        if error_code == "insufficient_quota":
+            st.error("OpenAI API quota or billing is not active for this API key.")
+            st.info(
+                "Check your API billing, credits, and usage limits in the OpenAI Platform dashboard. "
+                "ChatGPT Pro does not include API usage."
+            )
+            return
+
+        st.error("OpenAI rate limit reached. Wait a bit, then try again with fewer screenshots.")
+        return
+
+    if isinstance(error, APIError):
+        st.error("OpenAI returned an API error. Check the message below and try again.")
+        st.code(str(error), language="text")
+        return
+
+    st.error("OpenAI request failed. Check your API key, billing, and network connection.")
+    st.code(str(error), language="text")
 
 with st.sidebar:
     st.header("App Controls")
@@ -46,44 +72,51 @@ with tab_upload:
 
         if st.button("Analyze screenshots"):
             progress = st.progress(0)
+            had_error = False
 
             for index, uploaded_file in enumerate(uploaded_files):
                 file_path = save_uploaded_file(uploaded_file)
 
                 with st.spinner(f"Analyzing {uploaded_file.name}..."):
-                    analysis = analyze_screenshot(file_path, api_key)
+                    try:
+                        analysis = analyze_screenshot(file_path, api_key)
 
-                    searchable_text = " ".join(
-                        [
-                            analysis.get("title", ""),
-                            analysis.get("ocr_text", ""),
-                            analysis.get("visual_description", ""),
-                            " ".join(analysis.get("keywords", [])),
-                            analysis.get("search_summary", ""),
-                        ]
-                    )
+                        searchable_text = " ".join(
+                            [
+                                analysis.get("title", ""),
+                                analysis.get("ocr_text", ""),
+                                analysis.get("visual_description", ""),
+                                " ".join(analysis.get("keywords", [])),
+                                analysis.get("search_summary", ""),
+                            ]
+                        )
 
-                    embedding = get_embedding(searchable_text, api_key)
+                        embedding = get_embedding(searchable_text, api_key)
 
-                    record = {
-                        "filename": uploaded_file.name,
-                        "path": file_path,
-                        "title": analysis.get("title", uploaded_file.name),
-                        "ocr_text": analysis.get("ocr_text", ""),
-                        "visual_description": analysis.get("visual_description", ""),
-                        "keywords": analysis.get("keywords", []),
-                        "category": analysis.get("category", "other"),
-                        "search_summary": analysis.get("search_summary", ""),
-                        "embedding": embedding,
-                    }
+                        record = {
+                            "filename": uploaded_file.name,
+                            "path": file_path,
+                            "title": analysis.get("title", uploaded_file.name),
+                            "ocr_text": analysis.get("ocr_text", ""),
+                            "visual_description": analysis.get("visual_description", ""),
+                            "keywords": analysis.get("keywords", []),
+                            "category": analysis.get("category", "other"),
+                            "search_summary": analysis.get("search_summary", ""),
+                            "embedding": embedding,
+                        }
 
-                    records.append(record)
-                    save_index(records)
+                        records.append(record)
+                        save_index(records)
+                    except OpenAIError as error:
+                        show_openai_error(error)
+                        had_error = True
+                        break
 
                 progress.progress((index + 1) / len(uploaded_files))
 
-            st.success("Screenshots analyzed and indexed.")
-            st.rerun()
+            if not had_error:
+                st.success("Screenshots analyzed and indexed.")
+                st.rerun()
 
 with tab_search:
     st.subheader("Search screenshots")
@@ -94,7 +127,11 @@ with tab_search:
     )
 
     if query:
-        results = search_screenshots(query, records, api_key, top_k=5)
+        try:
+            results = search_screenshots(query, records, api_key, top_k=5)
+        except OpenAIError as error:
+            show_openai_error(error)
+            st.stop()
 
         if not results:
             st.warning("No results found yet.")
