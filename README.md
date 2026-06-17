@@ -116,3 +116,11 @@ https://share.streamlit.io/
 ```
 
 The deployed app can be shared after Streamlit finishes building it.
+
+## Live App
+
+Open the deployed project here:
+
+```text
+https://visualmemorysearch.streamlit.app/
+```
