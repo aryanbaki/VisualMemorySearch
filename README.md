@@ -1,186 +1,118 @@
 # Visual Memory Search
 
-Visual Memory Search is a Streamlit app that lets users upload screenshots, analyze them with AI, and search through them using natural language.
+Visual Memory Search is a Streamlit app for uploading screenshots and finding them later with natural language search. It turns screenshots into searchable records, shows a gallery of saved images, and returns matching screenshots with scores and short explanations.
 
-The app also includes a no-cost demo mode for public demos. Demo mode does not call OpenAI. It uses local image metadata and local text similarity so visitors can try the upload, gallery, dashboard, and search flow without using API credits.
+The app includes Demo Mode for public deployment. Demo Mode uses local sample logic and does not call OpenAI, so visitors can try the interface without using API credits.
 
-## What The App Does
-
-1. Upload screenshots.
-2. Analyze screenshot text and visual UI.
-3. Store screenshot metadata locally.
-4. Create embeddings from searchable screenshot summaries.
-5. Search screenshots using natural language.
-6. Return the top 5 matches with image previews, confidence scores, and explanations.
-
-## Tech Stack
+## Technologies Used
 
 - Python
 - Streamlit
-- OpenAI vision and embeddings
+- OpenAI API for screenshot analysis and embeddings
 - Pandas
 - NumPy
 - scikit-learn
 - Pillow
+- Local JSON storage
 
-## Project Structure
+## Features
 
-```text
-Visual Memory Search/
-  app.py
-  requirements.txt
-  README.md
-  .gitignore
-  .streamlit/
-    secrets.toml
-  src/
-    __init__.py
-    analyzer.py
-    search.py
-    storage.py
-  data/
-    index.json
-    screenshots/
-      .gitkeep
-```
+- Upload screenshot images.
+- Analyze screenshot text, layout, and visual context.
+- Save screenshot metadata in a local index.
+- Search screenshots with plain English queries.
+- Rank results with similarity scores.
+- Show image previews beside search results.
+- Use Demo Mode for a public no-cost version.
+- Use full AI mode locally with an OpenAI API key.
+- Keep screenshots and generated index files out of Git.
 
-## File Purpose
+## How I Built It
 
-`app.py` is the main Streamlit dashboard.
+I built the project as a Streamlit app because it let me create the upload, dashboard, gallery, and search workflow quickly in Python. The app separates the main interface from the helper modules:
 
-`src/analyzer.py` sends screenshots to the AI model and returns structured screenshot analysis.
+- `app.py` controls the Streamlit screens and user actions.
+- `src/analyzer.py` handles AI screenshot analysis.
+- `src/search.py` handles embeddings and similarity search.
+- `src/storage.py` saves uploaded files and the screenshot index.
+- `src/demo_mode.py` keeps the public demo usable without an API key.
 
-`src/search.py` creates embeddings and ranks screenshots using cosine similarity.
+The main idea was to make screenshots work like searchable memory. Instead of remembering the exact file name, the user can search for what was on the screen, such as a login error, dashboard chart, blue button, or settings page.
 
-`src/storage.py` saves uploaded screenshots and loads/saves the local JSON index.
+## What I Learned
 
-`data/index.json` stores screenshot metadata and embeddings during local development.
+- How to organize a Streamlit app into smaller Python modules.
+- How image uploads work in a web app.
+- How AI-generated descriptions can make images searchable.
+- How embeddings and cosine similarity can rank search results.
+- How to keep API keys out of source code.
+- How to build a public demo mode that does not spend API credits.
+- How important it is to separate local data from files that should be committed.
 
-`data/screenshots/` stores uploaded screenshot image files during local development.
+## What I Would Improve
 
-## Setup
+- Add user accounts so each person has a private screenshot library.
+- Store files in cloud storage instead of local folders.
+- Add tags, folders, and manual notes for each screenshot.
+- Add OCR fallback for screenshots that do not need full AI vision.
+- Add filters for date, app name, and screenshot type.
+- Add a persistent database for deployed versions.
+- Add a queue for analyzing many screenshots at once.
 
-Create a virtual environment:
+## Run Locally
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-```
-
-Install dependencies:
-
-```bash
 pip install -r requirements.txt
+streamlit run app.py
 ```
 
-Add your OpenAI API key in `.streamlit/secrets.toml`:
+Open the local URL Streamlit prints in the terminal.
+
+## Demo Mode
+
+Demo Mode is best for public demos because it does not require an OpenAI API key.
+
+Create `.streamlit/secrets.toml` locally if you want to force demo mode:
+
+```toml
+DEMO_MODE = true
+```
+
+## Full AI Mode
+
+Full AI Mode uses OpenAI for screenshot analysis and embeddings.
+
+Create `.streamlit/secrets.toml`:
 
 ```toml
 OPENAI_API_KEY = "your_api_key_here"
+DEMO_MODE = false
 ```
 
-For a deployed demo that does not spend API credits, use:
+Do not commit `.streamlit/secrets.toml`.
+
+## Deploy
+
+This app is ready for Streamlit Community Cloud.
+
+Use these settings when creating the app:
+
+- Repository: `aryanbaki/VisualMemorySearch`
+- Branch: `main`
+- Main file path: `app.py`
+
+For a free public demo, add this Streamlit secret:
 
 ```toml
 DEMO_MODE = true
 ```
 
-In demo mode, the OpenAI key is optional because no OpenAI API calls are made.
-
-Run the app:
-
-```bash
-streamlit run app.py
-```
-
-## Run With Your Own OpenAI Credits
-
-By default, the app starts in demo mode so it does not spend OpenAI API credits. Demo mode is useful for trying the interface, uploading screenshots, viewing the dashboard, and testing local search.
-
-To use the full AI version, each person should use their own OpenAI API key. The full AI version sends screenshots to OpenAI for visual analysis and creates embeddings for semantic search, so it can create API charges on that person's OpenAI API account.
-
-### 1. Get An OpenAI API Key
-
-Create or sign in to an OpenAI Platform account:
+Deploy from Streamlit Cloud:
 
 ```text
-https://platform.openai.com/api-keys
+https://share.streamlit.io/
 ```
 
-Create a new secret key and keep it private. Do not paste it into `app.py`, GitHub, Discord, screenshots, or public docs.
-
-### 2. Add Local Secrets
-
-Create this file if it does not already exist:
-
-```text
-.streamlit/secrets.toml
-```
-
-Paste this into it:
-
-```toml
-OPENAI_API_KEY = "paste_your_api_key_here"
-DEMO_MODE = false
-```
-
-`DEMO_MODE = false` tells the app to use the real OpenAI vision and embedding pipeline.
-
-### 3. Install And Run
-
-Use these commands from the project folder:
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-streamlit run app.py
-```
-
-Then upload a few screenshots and click `Analyze screenshots`.
-
-### 4. Set A Budget Limit
-
-Before testing a lot of screenshots, set a small OpenAI API budget or usage limit:
-
-```text
-https://platform.openai.com/settings/organization/limits
-```
-
-ChatGPT Plus or Pro does not include OpenAI API usage. The API is billed separately through the OpenAI Platform account connected to the API key.
-
-## Streamlit Cloud Secrets
-
-If you deploy this app publicly, keep demo mode on unless you intentionally want to pay for users' API calls.
-
-For a no-cost public demo, add this in Streamlit Cloud secrets:
-
-```toml
-DEMO_MODE = true
-```
-
-Do not add `OPENAI_API_KEY` for the public demo unless you are comfortable with visitors using your API credits.
-
-If someone forks the project and wants the full AI version, they should add their own secrets in their own Streamlit app:
-
-```toml
-OPENAI_API_KEY = "their_api_key_here"
-DEMO_MODE = false
-```
-
-## Demo Flow
-
-Upload 5 to 10 screenshots, click Analyze, then try searches like:
-
-- login error
-- blue button
-- dashboard chart
-- authentication warning
-- table with user data
-- code editor
-
-The core loop is:
-
-```text
-screenshot -> AI understanding -> embedding -> search result -> visual proof
-```
+The deployed app can be shared after Streamlit finishes building it.
